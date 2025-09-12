@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Interpreter
 {
@@ -27,11 +28,56 @@ namespace Interpreter
         void WriteAllInfo();
     }
 
-    static class Output
+    static class StaticMetods
     {
+        public static readonly HashSet<string> _keywords = new()
+        {
+            "if", "else", "while", "for", "func",
+            "return", "yes", "no", "null"
+        };
+        public static readonly HashSet<string> _border = new()
+        {
+            "(", ")", ";", " "
+        };
         public static void OutputAllInfo(ITokens tokens)
         {
             Console.WriteLine($"Номер: {tokens.TokenNamberPos ?? -1}; Тип: {tokens.TokenType}; Значение: {tokens.TokenValue};\n");
+        }
+    }
+    class Parser
+    {
+        public string input_str { get; }
+        public Parser(string input_str) => this.input_str = input_str;
+
+        public List<ITokens> Bypass()
+        {
+            List <ITokens> tokens = new List <ITokens>();
+            int pos = 0;
+            int max_position = input_str.Length;
+            while (pos < max_position)
+            {
+                string temp = "";
+                while (StaticMetods._border.Contains((input_str[pos]).ToString()))
+                {
+                    temp += input_str[pos];
+                    pos++;
+                }
+
+                if (StaticMetods._keywords.Contains(temp))
+                {
+                    foreach(var it in StaticMetods._keywords)
+                    {
+                        tokens.Add(new )
+                    }
+                }
+
+                temp = "";
+                pos++;
+            }
+
+
+
+            return new List<ITokens>();
         }
     }
     class Frac : ITokens
@@ -44,7 +90,7 @@ namespace Interpreter
 
         public void WriteAllInfo()
         {
-            Output.OutputAllInfo(this);
+            StaticMetods.OutputAllInfo(this);
         }
     }
     class String : ITokens
@@ -57,7 +103,7 @@ namespace Interpreter
 
         public void WriteAllInfo()
         {
-            Output.OutputAllInfo(this);
+            StaticMetods.OutputAllInfo(this);
         }
     }
     class Bool : ITokens
@@ -70,7 +116,7 @@ namespace Interpreter
 
         public void WriteAllInfo()
         {
-            Output.OutputAllInfo(this);
+            StaticMetods.OutputAllInfo(this);
         }
     }
     class Num : ITokens
@@ -82,7 +128,7 @@ namespace Interpreter
 
         public void WriteAllInfo()
         {
-            Output.OutputAllInfo(this);
+            StaticMetods.OutputAllInfo(this);
         }
     }
     class IF : ITokens, IKeywords
@@ -94,7 +140,7 @@ namespace Interpreter
 
         public void WriteAllInfo()
         {
-            Output.OutputAllInfo(this);
+            StaticMetods.OutputAllInfo(this);
         }
     }
     class Program
