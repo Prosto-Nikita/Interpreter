@@ -1,5 +1,6 @@
 ﻿using Interpreter;
 using System;
+using System.Collections.Generic;
 
 namespace KeyWordsClasses
 {
@@ -7,113 +8,157 @@ namespace KeyWordsClasses
     {
         public If(int numberPos, int numberStr) : base(numberPos, numberStr)
         {
-            TokenNamberPos = numberPos;
+            TokenNumberPos = numberPos;
             TokenType = "Ключевое слово";
             TokenValue = "if";
+            NumberPos = numberPos;
         }
 
         public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
         {
             int temp_pos = pos_now;
-            if(temp_pos == tokens.Count - 1)
+            
+            if (temp_pos >= tokens.Count - 1)
             {
-                errors = $"После ключевого слова if должен идти символ \"[\". Позиция: {TokenNamberPos + TokenValue.Length}\n"; return errors ;
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'if' должен идти символ \"[\".\n";
+                return errors;
             }
-            if(temp_pos < tokens.Count - 1)
+            
+            if (tokens[temp_pos + 1].TokenValue != "[")
             {
-                if (tokens[temp_pos + 1].TokenValue != "[")
-                {
-                    errors = $"После ключевого слова if должен идти символ \"[\". Позиция: {TokenNamberPos + TokenValue.Length}\n"; return errors;
-                }
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'if' должен идти символ \"[\".\n";
+                return errors;
             }
-            while(temp_pos < tokens.Count - 1)
+            
+            int bracketCount = 0;
+            temp_pos++;
+            while (temp_pos < tokens.Count)
             {
-                if (tokens[temp_pos].TokenValue == "]")
+                if (tokens[temp_pos].TokenValue == "[")
+                    bracketCount++;
+                else if (tokens[temp_pos].TokenValue == "]")
                 {
-                    //Проверка правильности математического выражения
-
-                    temp_pos++;
-
-                    if (tokens[temp_pos].TokenValue != "(")
-                    {
-                        errors = $"После закрывающей скобки условия \"]\" должна идти скобка \"(\". Позиция: {tokens[temp_pos - 1].TokenNamberPos + 1}\n"; return errors;
-                    }
-                    while (temp_pos < tokens.Count - 1)
-                    {
-                        if (tokens[temp_pos].TokenValue == ")")
-                        {
-                            return errors;
-                        }
-                        temp_pos++;
-                    }
-                    errors = $"Нет закрывающей скобки \")\" для if. Позция if: {TokenNamberPos}"; return errors;
+                    bracketCount--;
+                    if (bracketCount == 0)
+                        break;
                 }
                 temp_pos++;
             }
-            errors = $"Нет закрывающей скобки \"]\" для if. Позция if: {TokenNamberPos}";
+            
+            if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != "]")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \"]\" для условия 'if'.\n";
+                return errors;
+            }
+            
+            if (temp_pos >= tokens.Count - 1 || tokens[temp_pos + 1].TokenValue != "(")
+            {
+                errors += $"Строка {tokens[temp_pos].NumberStr}, Позиция {tokens[temp_pos].GetPositionInLine()}: После закрывающей скобки условия \"]\" должна идти скобка \"(\".\n";
+                return errors;
+            }
+            
+            int parenCount = 0;
+            temp_pos++;
+            while (temp_pos < tokens.Count)
+            {
+                if (tokens[temp_pos].TokenValue == "(")
+                    parenCount++;
+                else if (tokens[temp_pos].TokenValue == ")")
+                {
+                    parenCount--;
+                    if (parenCount == 0)
+                        break;
+                }
+                temp_pos++;
+            }
+            
+            if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != ")")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \")\" для блока кода 'if'.\n";
+                return errors;
+            }
+            
             return errors;
         }
     }
+    
     class Other : BaseTokens
     {
         public Other(int numberPos, int numberStr) : base(numberPos, numberStr)
         {
-            TokenNamberPos = numberPos;
+            TokenNumberPos = numberPos;
             TokenType = "Ключевое слово";
             TokenValue = "other";
+            NumberPos = numberPos;
         }
         
         public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
         {
             int temp_pos = pos_now;
-            if (temp_pos == tokens.Count - 1)
+            
+            if (temp_pos >= tokens.Count - 1)
             {
-                errors = $"После ключевого слова other должен идти символ \"[\" или \"(\". Позиция: {TokenNamberPos + TokenValue.Length}\n"; return errors;
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'other' должен идти символ \"[\" или \"(\".\n";
+                return errors;
             }
-            if (temp_pos < tokens.Count - 1)
+            
+            var nextToken = tokens[temp_pos + 1];
+            if (nextToken.TokenValue == "[")
             {
-                if (tokens[temp_pos + 1].TokenValue == "[")
+                int bracketCount = 0;
+                temp_pos++;
+                while (temp_pos < tokens.Count)
                 {
-                    while (temp_pos < tokens.Count - 1)
+                    if (tokens[temp_pos].TokenValue == "[")
+                        bracketCount++;
+                    else if (tokens[temp_pos].TokenValue == "]")
                     {
-                        if (tokens[temp_pos].TokenValue == "]")
-                        {
-                            //Проверка правильности математического выражения
-
-                            temp_pos++;
-
-                            if (tokens[temp_pos].TokenValue != "(")
-                            {
-                                errors = $"После закрывающей скобки условия \"]\" должна идти скобка \"(\". Позиция: {tokens[temp_pos - 1].TokenNamberPos + 1}\n"; return errors;
-                            }
-                            while (temp_pos < tokens.Count - 1)
-                            {
-                                if (tokens[temp_pos].TokenValue == ")")
-                                {
-                                    return errors;
-                                }
-                                temp_pos++;
-                            }
-                            errors = $"Нет закрывающей скобки \")\" для other. Позция other: {TokenNamberPos}"; return errors;
-                        }
-                        temp_pos++;
+                        bracketCount--;
+                        if (bracketCount == 0)
+                            break;
                     }
-                    errors = $"Нет закрывающей скобки \"]\" для other. Позция other: {TokenNamberPos}";
+                    temp_pos++;
+                }
+                
+                if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != "]")
+                {
+                    errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \"]\" для условия 'other'.\n";
                     return errors;
                 }
-                else 
+                
+                if (temp_pos >= tokens.Count - 1 || tokens[temp_pos + 1].TokenValue != "(")
                 {
-                    while (temp_pos < tokens.Count)
-                    {
-                        if (tokens[temp_pos].TokenValue == ")")
-                        {
-                            return errors;
-                        }
-                        temp_pos++;
-                    }
-                    errors = $"Нет закрывающей скобки \")\" для \"other\". Позция other: {TokenNamberPos}"; return errors;
+                    errors += $"Строка {tokens[temp_pos].NumberStr}, Позиция {tokens[temp_pos].GetPositionInLine()}: После закрывающей скобки условия \"]\" должна идти скобка \"(\".\n";
+                    return errors;
                 }
             }
+            else if (nextToken.TokenValue != "(")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'other' должен идти символ \"[\" или \"(\".\n";
+                return errors;
+            }
+            
+            int parenCount = 0;
+            temp_pos = pos_now + 1;
+            while (temp_pos < tokens.Count)
+            {
+                if (tokens[temp_pos].TokenValue == "(")
+                    parenCount++;
+                else if (tokens[temp_pos].TokenValue == ")")
+                {
+                    parenCount--;
+                    if (parenCount == 0)
+                        break;
+                }
+                temp_pos++;
+            }
+            
+            if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != ")")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \")\" для блока кода 'other'.\n";
+                return errors;
+            }
+            
             return errors;
         }
     }
@@ -122,50 +167,76 @@ namespace KeyWordsClasses
     {
         public While(int numberPos, int numberStr) : base(numberPos, numberStr)
         {
-            TokenNamberPos = numberPos;
+            TokenNumberPos = numberPos;
             TokenType = "Ключевое слово";
             TokenValue = "while";
+            NumberPos = numberPos;
         }
 
         public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
         {
             int temp_pos = pos_now;
-            if (temp_pos == tokens.Count - 1)
+            
+            if (temp_pos >= tokens.Count - 1)
             {
-                errors = $"После ключевого слова while должен идти символ \"[\". Позиция: {TokenNamberPos + TokenValue.Length}\n"; return errors;
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'while' должен идти символ \"[\".\n";
+                return errors;
             }
-            if (temp_pos < tokens.Count - 1)
+            
+            if (tokens[temp_pos + 1].TokenValue != "[")
             {
-                if (tokens[temp_pos + 1].TokenValue != "[")
-                {
-                    errors = $"После ключевого слова while должен идти символ \"[\". Позиция: {TokenNamberPos + TokenValue.Length}\n"; return errors;
-                }
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'while' должен идти символ \"[\".\n";
+                return errors;
             }
-            while (temp_pos < tokens.Count - 1)
+            
+            int bracketCount = 0;
+            temp_pos++;
+            while (temp_pos < tokens.Count)
             {
-                if (tokens[temp_pos].TokenValue == "]")
+                if (tokens[temp_pos].TokenValue == "[")
+                    bracketCount++;
+                else if (tokens[temp_pos].TokenValue == "]")
                 {
-                    //Проверка правильности математического выражения
-
-                    temp_pos++;
-
-                    if (tokens[temp_pos].TokenValue != "(")
-                    {
-                        errors = $"После закрывающей скобки условия \"]\" должна идти скобка \"(\". Позиция: {tokens[temp_pos - 1].TokenNamberPos + 1}\n"; return errors;
-                    }
-                    while (temp_pos < tokens.Count - 1)
-                    {
-                        if (tokens[temp_pos].TokenValue == ")")
-                        {
-                            return errors;
-                        }
-                        temp_pos++;
-                    }
-                    errors = $"Нет закрывающей скобки \")\" для while. Позция while: {TokenNamberPos}"; return errors;
+                    bracketCount--;
+                    if (bracketCount == 0)
+                        break;
                 }
                 temp_pos++;
             }
-            errors = $"Нет закрывающей скобки \"]\" для while. Позция while: {TokenNamberPos}";
+            
+            if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != "]")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \"]\" для условия 'while'.\n";
+                return errors;
+            }
+            
+            if (temp_pos >= tokens.Count - 1 || tokens[temp_pos + 1].TokenValue != "(")
+            {
+                errors += $"Строка {tokens[temp_pos].NumberStr}, Позиция {tokens[temp_pos].GetPositionInLine()}: После закрывающей скобки условия \"]\" должна идти скобка \"(\".\n";
+                return errors;
+            }
+            
+            int parenCount = 0;
+            temp_pos++;
+            while (temp_pos < tokens.Count)
+            {
+                if (tokens[temp_pos].TokenValue == "(")
+                    parenCount++;
+                else if (tokens[temp_pos].TokenValue == ")")
+                {
+                    parenCount--;
+                    if (parenCount == 0)
+                        break;
+                }
+                temp_pos++;
+            }
+            
+            if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != ")")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \")\" для блока кода 'while'.\n";
+                return errors;
+            }
+            
             return errors;
         }
     }
@@ -174,27 +245,161 @@ namespace KeyWordsClasses
     {
         public For(int numberPos, int numberStr) : base(numberPos, numberStr)
         {
-            TokenNamberPos = numberPos;
+            TokenNumberPos = numberPos;
             TokenType = "Ключевое слово";
             TokenValue = "for";
+            NumberPos = numberPos;
         }
 
-        public string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
+        public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
         {
+            int temp_pos = pos_now;
+            
+            if (temp_pos >= tokens.Count - 1)
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'for' должен идти символ \"[\".\n";
+                return errors;
+            }
+            
+            if (tokens[temp_pos + 1].TokenValue != "[")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'for' должен идти символ \"[\".\n";
+                return errors;
+            }
+            
+            int bracketCount = 0;
+            temp_pos++;
+            while (temp_pos < tokens.Count)
+            {
+                if (tokens[temp_pos].TokenValue == "[")
+                    bracketCount++;
+                else if (tokens[temp_pos].TokenValue == "]")
+                {
+                    bracketCount--;
+                    if (bracketCount == 0)
+                        break;
+                }
+                temp_pos++;
+            }
+            
+            if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != "]")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \"]\" для заголовка 'for'.\n";
+                return errors;
+            }
+            
+            if (temp_pos >= tokens.Count - 1 || tokens[temp_pos + 1].TokenValue != "(")
+            {
+                errors += $"Строка {tokens[temp_pos].NumberStr}, Позиция {tokens[temp_pos].GetPositionInLine()}: После закрывающей скобки заголовка \"]\" должна идти скобка \"(\".\n";
+                return errors;
+            }
+            
+            int parenCount = 0;
+            temp_pos++;
+            while (temp_pos < tokens.Count)
+            {
+                if (tokens[temp_pos].TokenValue == "(")
+                    parenCount++;
+                else if (tokens[temp_pos].TokenValue == ")")
+                {
+                    parenCount--;
+                    if (parenCount == 0)
+                        break;
+                }
+                temp_pos++;
+            }
+            
+            if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != ")")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \")\" для блока кода 'for'.\n";
+                return errors;
+            }
+            
             return errors;
         }
     }
 
     class Func : BaseTokens
     {
-        public Func(int numberPos, int numberStr) : base (numberPos, numberStr)
+        public Func(int numberPos, int numberStr) : base(numberPos, numberStr)
         {
-            TokenNamberPos = numberPos;
+            TokenNumberPos = numberPos;
             TokenType = "Ключевое слово";
             TokenValue = "func";
+            NumberPos = numberPos;
         }
+        
         public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
         {
+            int temp_pos = pos_now;
+            
+            if (temp_pos >= tokens.Count - 1)
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'func' ожидается имя функции.\n";
+                return errors;
+            }
+            
+            var nextToken = tokens[temp_pos + 1];
+            if (nextToken.TokenType != "Название переменной")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'func' ожидается имя функции.\n";
+                return errors;
+            }
+            
+            if (temp_pos + 2 >= tokens.Count || tokens[temp_pos + 2].TokenValue != "[")
+            {
+                errors += $"Строка {nextToken.NumberStr}, Позиция {nextToken.GetPositionInLine()}: После имени функции ожидается символ \"[\" для параметров.\n";
+                return errors;
+            }
+            
+            int bracketCount = 0;
+            temp_pos += 2;
+            while (temp_pos < tokens.Count)
+            {
+                if (tokens[temp_pos].TokenValue == "[")
+                    bracketCount++;
+                else if (tokens[temp_pos].TokenValue == "]")
+                {
+                    bracketCount--;
+                    if (bracketCount == 0)
+                        break;
+                }
+                temp_pos++;
+            }
+            
+            if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != "]")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \"]\" для параметров функции.\n";
+                return errors;
+            }
+            
+            if (temp_pos >= tokens.Count - 1 || tokens[temp_pos + 1].TokenValue != "(")
+            {
+                errors += $"Строка {tokens[temp_pos].NumberStr}, Позиция {tokens[temp_pos].GetPositionInLine()}: После параметров функции должна идти скобка \"(\" для тела функции.\n";
+                return errors;
+            }
+            
+            int parenCount = 0;
+            temp_pos++;
+            while (temp_pos < tokens.Count)
+            {
+                if (tokens[temp_pos].TokenValue == "(")
+                    parenCount++;
+                else if (tokens[temp_pos].TokenValue == ")")
+                {
+                    parenCount--;
+                    if (parenCount == 0)
+                        break;
+                }
+                temp_pos++;
+            }
+            
+            if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != ")")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \")\" для тела функции.\n";
+                return errors;
+            }
+            
             return errors;
         }
     }
@@ -203,12 +408,29 @@ namespace KeyWordsClasses
     {
         public Return(int numberPos, int numberStr) : base(numberPos, numberStr)
         {
-            TokenNamberPos = numberPos;
+            TokenNumberPos = numberPos;
             TokenType = "Ключевое слово";
             TokenValue = "return";
+            NumberPos = numberPos;
         }
+        
         public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
         {
+            bool insideFunction = false;
+            for (int i = pos_now; i >= 0; i--)
+            {
+                if (tokens[i] is Func)
+                {
+                    insideFunction = true;
+                    break;
+                }
+            }
+            
+            if (!insideFunction)
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Ключевое слово 'return' может использоваться только внутри функции.\n";
+            }
+            
             return errors;
         }
     }
@@ -217,9 +439,10 @@ namespace KeyWordsClasses
     {
         public Yes(int numberPos, int numberStr) : base(numberPos, numberStr)
         {
-            TokenNamberPos = numberPos;
+            TokenNumberPos = numberPos;
             TokenType = "Ключевое слово";
             TokenValue = "yes";
+            NumberPos = numberPos;
         }
 
         public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
@@ -232,9 +455,10 @@ namespace KeyWordsClasses
     {
         public No(int numberPos, int numberStr) : base(numberPos, numberStr)
         {
-            TokenNamberPos = numberPos;
+            TokenNumberPos = numberPos;
             TokenType = "Ключевое слово";
             TokenValue = "no";
+            NumberPos = numberPos;
         }
 
         public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
@@ -243,17 +467,23 @@ namespace KeyWordsClasses
         }
     }
 
-
     class NameVariable : BaseTokens
     {
         public NameVariable(int numberPos, string value, int numberStr) : base(numberPos, numberStr)
         {
-            TokenNamberPos = numberPos;
+            TokenNumberPos = numberPos;
             TokenValue = value;
             TokenType = "Название переменной";
+            NumberPos = numberPos;
         }
+        
         public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
         {
+            if (string.IsNullOrEmpty(TokenValue) || !char.IsLetter(TokenValue[0]))
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Недопустимое имя переменной: '{TokenValue}'. Имя должно начинаться с буквы.\n";
+            }
+            
             return errors;
         }
     }
@@ -262,9 +492,10 @@ namespace KeyWordsClasses
     {
         public Border(int numberPos, string value, int numberStr) : base(numberPos, numberStr)
         {
-            TokenNamberPos = numberPos;
+            TokenNumberPos = numberPos;
             TokenValue = value;
             TokenType = "Знак границы";
+            NumberPos = numberPos;
         }
 
         public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
@@ -273,24 +504,75 @@ namespace KeyWordsClasses
         }
     }
 
-    class Comments : BaseTokens 
+    class Comment : BaseTokens 
     {
-        public Comments(int numberPos, int begin, int end, string value, int numberStr) : base(numberPos, numberStr)
+        public Comment(int numberPos, string value, int numberStr) : base(numberPos, numberStr)
         {
-            TokenNamberPos = numberPos;
-            begin_pos = begin;
-            end_pos = end;
+            TokenNumberPos = numberPos;
             TokenValue = value;
-            TokenType = "Знак границы";
+            TokenType = "Комментарий";
+            NumberPos = numberPos;
         }
-        public int begin_pos {  get; }
-        public int end_pos { get; }
-        public override void WriteAllInfo()
-        {
-            
-        }
+
+
         public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
         {
+            return errors;
+        }
+    }
+    
+    class Operator : BaseTokens
+    {
+        public Operator(int numberPos, string value, int numberStr) : base(numberPos, numberStr)
+        {
+            TokenNumberPos = numberPos;
+            TokenValue = value;
+            TokenType = "Оператор";
+            NumberPos = numberPos;
+        }
+        
+        public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
+        {
+            if (pos_now == 0 || pos_now == tokens.Count - 1)
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Некорректное использование оператора '{TokenValue}'.\n";
+                return errors;
+            }
+            
+            var prevToken = tokens[pos_now - 1];
+            var nextToken = tokens[pos_now + 1];
+            
+            if (prevToken.TokenType == "Знак границы" && prevToken.TokenValue != ")" && prevToken.TokenValue != "]")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Некорректное использование оператора '{TokenValue}'.\n";
+            }
+            
+            if (nextToken.TokenType == "Знак границы" && nextToken.TokenValue != "(" && nextToken.TokenValue != "[")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Некорректное использование оператора '{TokenValue}'.\n";
+            }
+            
+            return errors;
+        }
+    }
+    
+    class Literal : BaseTokens
+    {
+        public Literal(int numberPos, string value, string type, int numberStr) : base(numberPos, numberStr)
+        {
+            TokenNumberPos = numberPos;
+            TokenValue = value;
+            TokenType = $"Литерал ({type})";
+            NumberPos = numberPos;
+        }
+        
+        public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
+        {
+            if (TokenType.Contains("число") && !double.TryParse(TokenValue, out _))
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Некорректный числовой литерал: '{TokenValue}'.\n";
+            }
+            
             return errors;
         }
     }

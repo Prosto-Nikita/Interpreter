@@ -1,30 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using DataTypeClasses;
 using KeyWordsClasses;
 
 namespace Interpreter
 {
-    static class StaticMetods
-    {
-        public static readonly HashSet<string> _keywords = new()
-        {
-            "if", "other", "while", "for", "func",
-            "return", "yes", "no", "null"
-        };
-        public static readonly HashSet<string> _border = new()
-        {
-            "(", ")", ";", " ", "[", "]"
-        };
-        public static readonly HashSet<string> _data_type = new()
-        {
-            "num", "frac", "str", "bool"
-        };
-        public static void OutputAllInfo(BaseTokens tokens)
-        {
-            Console.WriteLine($"Позиция: {tokens.TokenNamberPos} " + $"Тип: {tokens.TokenType} " + $"Значение: {tokens.TokenValue}\n");
-        }
-    }
     class Parser
     {
         public string input_str { get; }
@@ -37,142 +18,335 @@ namespace Interpreter
                 Console.WriteLine("Код программы отсутствует.");
                 return new List<BaseTokens>();
             }
-            List <BaseTokens> tokens = new List <BaseTokens>();
+
+            List<BaseTokens> tokens = new List<BaseTokens>();
             int pos = 0;
             int max_position = input_str.Length;
-            string temp = "";
             int stroke = 1;
-            int pos_in_stroke = 0;
+            int pos_in_stroke = 1;
+
             while (pos < max_position)
             {
-                pos_in_stroke = pos;
-                temp = "";
-                temp += input_str[pos];
-                if(temp == " ") { pos++; pos_in_stroke++; continue; }
-                if(temp == "\n" || temp == "\r") { pos++; stroke++; pos_in_stroke -= pos; continue; }
-                if (StaticMetods._border.Contains(temp))
+                char currentChar = input_str[pos];
+
+                if (char.IsWhiteSpace(currentChar))
                 {
-                    tokens.Add(new Border(pos_in_stroke, temp, stroke));
+                    if (currentChar == '\n')
+                    {
+                        stroke++;
+                        pos_in_stroke = 1;
+                    }
+                    else if (currentChar == '\r')
+                    {
+                        // Игнорируем \r
+                    }
+                    else
+                    {
+                        pos_in_stroke++;
+                    }
                     pos++;
-                    if (pos == max_position) { return tokens; }
-                    temp = input_str[pos].ToString();
                     continue;
                 }
 
-                if (pos >= input_str.Length) { return tokens; }
-
-                temp = "";
-                while (!(StaticMetods._border.Contains((input_str[pos]).ToString())))
+                if (currentChar == '#')
                 {
-                    temp += input_str[pos];
-                    pos++;
-                    if (pos == max_position) { break; }
-                }
+                    int start = pos;
+                    int startPosInLine = pos_in_stroke;
+                    int startStroke = stroke;
 
-
-                if (StaticMetods._keywords.Contains(temp))
-                {
-                    switch (temp)
+                    // Ищем конец строки или конец файла
+                    while (pos < max_position && input_str[pos] != '\n')
                     {
-                        case "if":
-                            tokens.Add(new If(pos_in_stroke, stroke));
-                            break;
-                        case "other":
-                            tokens.Add(new Other(pos_in_stroke, stroke));
-                            break;
-                        case "while":
-                            tokens.Add(new While(pos_in_stroke, stroke));
-                            break;
-                        case "for":
-                            tokens.Add(new For(pos_in_stroke, stroke));
-                            break;
-                        case "func":
-                            tokens.Add(new Func(pos_in_stroke, stroke));
-                            break;
-                        case "return":
-                            tokens.Add(new Return(pos_in_stroke, stroke));
-                            break;
-                        case "yes":
-                            tokens.Add(new Yes(pos_in_stroke, stroke));
-                            break;
-                        case "no":
-                            tokens.Add(new No(pos_in_stroke, stroke));
-                            break;
+                        pos++;
+                        pos_in_stroke++;
                     }
-                }
-                else if (StaticMetods._data_type.Contains(temp))
-                {
-                    foreach (var it in StaticMetods._data_type)
+
+                    string comment = input_str.Substring(start, pos - start);
+                    var commentToken = new Comment(start, comment, startStroke);
+                    commentToken.NumberPos = startPosInLine;
+                    tokens.Add(commentToken);
+
+                    if (pos < max_position && input_str[pos] == '\n')
                     {
-                        switch (temp)
+                        stroke++;
+                        pos_in_stroke = 1;
+                        pos++;
+                    }
+                    continue;
+                }
+
+                if (StaticMetods._border.Contains(currentChar.ToString()))
+                {
+                    var borderToken = new Border(pos, currentChar.ToString(), stroke);
+                    borderToken.NumberPos = pos_in_stroke;
+                    tokens.Add(borderToken);
+                    pos++;
+                    pos_in_stroke++;
+                    continue;
+                }
+
+                string potentialOperator = currentChar.ToString();
+                if (pos + 1 < max_position && StaticMetods._operators.Contains(currentChar.ToString() + input_str[pos + 1]))
+                {
+                    potentialOperator = currentChar.ToString() + input_str[pos + 1];
+                    var operatorToken = new Operator(pos, potentialOperator, stroke);
+                    operatorToken.NumberPos = pos_in_stroke;
+                    tokens.Add(operatorToken);
+                    pos += 2;
+                    pos_in_stroke += 2;
+                    continue;
+                }
+                else if (StaticMetods._operators.Contains(currentChar.ToString()))
+                {
+                    var operatorToken = new Operator(pos, currentChar.ToString(), stroke);
+                    operatorToken.NumberPos = pos_in_stroke;
+                    tokens.Add(operatorToken);
+                    pos++;
+                    pos_in_stroke++;
+                    continue;
+                }
+
+                if (currentChar == '"')
+                {
+                    int start = pos;
+                    int startPosInLine = pos_in_stroke;
+
+                    pos++;
+                    pos_in_stroke++;
+
+                    while (pos < max_position && input_str[pos] != '"')
+                    {
+                        if (input_str[pos] == '\\')
                         {
-                            case "num":
-                                tokens.Add(new Num(pos_in_stroke, stroke));
-                                break;
-                            case "frac":
-                                tokens.Add(new Frac(pos_in_stroke, stroke));
-                                break;
-                            case "str":
-                                tokens.Add(new DataTypeClasses.String(pos_in_stroke, stroke));
-                                break;
-                            default:
-                                tokens.Add(new Bool(pos_in_stroke, stroke));
-                                break;
+                            pos++;
+                            pos_in_stroke++;
+                            if (pos >= max_position) break;
+                        }
+                        pos++;
+                        pos_in_stroke++;
+                    }
+
+                    if (pos >= max_position)
+                    {
+                        Console.WriteLine("Незакрытая строковая константа.");
+                        break;
+                    }
+
+                    pos++;
+                    pos_in_stroke++;
+
+                    string stringValue = input_str.Substring(start, pos - start);
+                    var literalToken = new Literal(start, stringValue, "строка", stroke);
+                    literalToken.NumberPos = startPosInLine;
+                    tokens.Add(literalToken);
+                    continue;
+                }
+
+                if (char.IsDigit(currentChar))
+                {
+                    int start = pos;
+                    int startPosInLine = pos_in_stroke;
+
+                    while (pos < max_position && (char.IsDigit(input_str[pos]) || input_str[pos] == '.'))
+                    {
+                        pos++;
+                        pos_in_stroke++;
+                    }
+
+                    string numberValue = input_str.Substring(start, pos - start);
+                    var literalToken = new Literal(start, numberValue, "число", stroke);
+                    literalToken.NumberPos = startPosInLine;
+                    tokens.Add(literalToken);
+                    continue;
+                }
+
+                if (char.IsLetter(currentChar) || currentChar == '_')
+                {
+                    int start = pos;
+                    int startPosInLine = pos_in_stroke;
+
+                    while (pos < max_position && (char.IsLetterOrDigit(input_str[pos]) || input_str[pos] == '_'))
+                    {
+                        pos++;
+                        pos_in_stroke++;
+                    }
+
+                    string identifier = input_str.Substring(start, pos - start);
+
+                    BaseTokens token;
+                    if (StaticMetods._keywords.Contains(identifier))
+                    {
+                        switch (identifier)
+                        {
+                            case "if": token = new If(start, stroke); break;
+                            case "other": token = new Other(start, stroke); break;
+                            case "while": token = new While(start, stroke); break;
+                            case "for": token = new For(start, stroke); break;
+                            case "func": token = new Func(start, stroke); break;
+                            case "return": token = new Return(start, stroke); break;
+                            case "yes": token = new Yes(start, stroke); break;
+                            case "no": token = new No(start, stroke); break;
+                            default: token = new NameVariable(start, identifier, stroke); break;
                         }
                     }
-                }
-                else if (temp.All(c =>
-                    (c >= 'A' && c <= 'Z') ||
-                    (c >= 'a' && c <= 'z') ||
-                    (c >= '0' && c <= '9')))
-                {
-                    tokens.Add(new NameVariable(pos_in_stroke, temp, stroke));
-                }
-                else { Console.WriteLine("Непредвиденное значение ввода, либо ошибка в синтаксисе."); break; }
+                    else if (StaticMetods._data_type.Contains(identifier))
+                    {
+                        switch (identifier)
+                        {
+                            case "num": token = new Num(start, stroke); break;
+                            case "frac": token = new Frac(start, stroke); break;
+                            case "str": token = new DataTypeClasses.String(start, stroke); break;
+                            case "bool": token = new Bool(start, stroke); break;
+                            default: token = new NameVariable(start, identifier, stroke); break;
+                        }
+                    }
+                    else
+                    {
+                        token = new NameVariable(start, identifier, stroke);
+                    }
 
-                if (pos == max_position) { return tokens; }
-                temp = input_str[pos].ToString();
+                    token.NumberPos = startPosInLine;
+                    tokens.Add(token);
+                    continue;
+                }
+
+                Console.WriteLine($"Неизвестный символ: '{currentChar}' в строке {stroke}, позиция {pos_in_stroke}");
+                pos++;
+                pos_in_stroke++;
             }
-            return new List<BaseTokens>();
+
+            return tokens;
         }
-        public void Output_Info(List<BaseTokens> tokens)
+
+        public bool CheckForErrors(List<BaseTokens> tokens)
         {
             string errors = "";
-            if (tokens.Count == 0) { return; }
-            Console.WriteLine($"{"|Номер",0} {"|Строка",10} {"|Позиция",20} {"Тип",30} {"|Значение",40} {"|",50}");
+
             for (int i = 0; i < tokens.Count; i++)
             {
                 tokens[i].CheckingErrors(in tokens, ref errors, i);
-                tokens[i].WriteAllInfo();
-                if(errors != "")
+
+                if (!string.IsNullOrEmpty(errors))
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\nОШИБКИ КОМПИЛЯЦИИ:");
+                    Console.ResetColor();
                     Console.WriteLine(errors);
-                    return;
+                    return true;
                 }
             }
-            
+
+            int bracketBalance = 0;
+            int parenBalance = 0;
+            int braceBalance = 0;
+
+            foreach (var token in tokens)
+            {
+                switch (token.TokenValue)
+                {
+                    case "[": bracketBalance++; break;
+                    case "]": bracketBalance--; break;
+                    case "(": parenBalance++; break;
+                    case ")": parenBalance--; break;
+                    case "{": braceBalance++; break;
+                    case "}": braceBalance--; break;
+                }
+            }
+
+            if (bracketBalance != 0)
+            {
+                errors += $"Несбалансированность квадратных скобок: разница {bracketBalance}\n";
+            }
+
+            if (parenBalance != 0)
+            {
+                errors += $"Несбалансированность круглых скобок: разница {parenBalance}\n";
+            }
+
+            if (braceBalance != 0)
+            {
+                errors += $"Несбалансированность фигурных скобок: разница {braceBalance}\n";
+            }
+
+            if (!string.IsNullOrEmpty(errors))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\nОШИБКИ КОМПИЛЯЦИИ:");
+                Console.ResetColor();
+                Console.WriteLine(errors);
+                return true;
+            }
+
+            return false;
+        }
+
+        public void Output_Info(List<BaseTokens> tokens)
+        {
+            if (tokens.Count == 0)
+            {
+                Console.WriteLine("Токены не найдены.");
+                return;
+            }
+
+            if (CheckForErrors(tokens))
+            {
+                return;
+            }
+
+            StaticMetods.PrintTableHeader();
+
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                tokens[i].WriteAllInfo(i + 1);
+            }
+
+            StaticMetods.PrintTableFooter();
+
+            Console.WriteLine($"\nВсего токенов: {tokens.Count}");
         }
     }
-    
+
     class Program
     {
         static void Main(string[] args)
         {
-            string path_file = "C:\\Users\\user\\source\\repos\\Interpreter\\input.txt";
-            string input_str;
+            Console.WriteLine("=== ИНТЕРПРЕТАТОР ЯЗЫКА ===");
+
+            string filePath;
+            Console.WriteLine("Введите путь к файлу с кодом:");
+            filePath = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                Console.WriteLine("Файл не указан.\n");
+                return;
+            }
+
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"Файл '{filePath}' не найден.\n");
+                return;
+            }
+
             try
             {
-                input_str = File.ReadAllText(path_file);
-            }
-            catch { Console.WriteLine("Файл не найден"); return; }
+                string code = System.IO.File.ReadAllText(filePath, System.Text.Encoding.UTF8);
+                Console.WriteLine($"\n=== АНАЛИЗ ФАЙЛА: {Path.GetFileName(filePath)} ===\n");
 
-            Parser parser = new Parser(input_str);
-            List<BaseTokens> tokens = parser.Bypass();
-            //foreach(ITokens token in tokens)
-            //{
-            //    token.TokenValue
-            //}
-            parser.Output_Info(tokens);
+                Parser parser = new Parser(code);
+                List<BaseTokens> tokens = parser.Bypass();
+                parser.Output_Info(tokens);
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Ошибка при чтении файла: {ex.Message}");
+                Console.ResetColor();
+            }
+
+            Console.WriteLine("\nНажмите любую клавишу для выхода...");
+            Console.ReadKey();
         }
+
     }
 }
