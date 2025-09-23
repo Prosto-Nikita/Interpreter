@@ -576,4 +576,105 @@ namespace KeyWordsClasses
             return errors;
         }
     }
+    class Print : BaseTokens
+    {
+        public Print(int numberPos, int numberStr) : base(numberPos, numberStr)
+        {
+            TokenNumberPos = numberPos;
+            TokenType = "Ключевое слово";
+            TokenValue = "print";
+            NumberPos = numberPos;
+        }
+
+        public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
+        {
+            int temp_pos = pos_now;
+
+            if (temp_pos >= tokens.Count - 1)
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'print' должен идти символ \"[\".\n";
+                return errors;
+            }
+
+            if (tokens[temp_pos + 1].TokenValue != "[")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'print' должен идти символ \"[\".\n";
+                return errors;
+            }
+
+            int bracketCount = 0;
+            temp_pos++;
+            while (temp_pos < tokens.Count)
+            {
+                if (tokens[temp_pos].TokenValue == "[")
+                    bracketCount++;
+                else if (tokens[temp_pos].TokenValue == "]")
+                {
+                    bracketCount--;
+                    if (bracketCount == 0)
+                        break;
+                }
+                temp_pos++;
+            }
+
+            if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != "]")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \"]\" для функции 'print'.\n";
+                return errors;
+            }
+
+            return errors;
+        }
+    }
+
+    class Input : BaseTokens
+    {
+        public Input(int numberPos, int numberStr) : base(numberPos, numberStr)
+        {
+            TokenNumberPos = numberPos;
+            TokenType = "Ключевое слово";
+            TokenValue = "input";
+            NumberPos = numberPos;
+        }
+
+        public override string CheckingErrors(in List<BaseTokens> tokens, ref string errors, int pos_now)
+        {
+            int temp_pos = pos_now;
+
+            if (temp_pos >= tokens.Count - 1)
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'input' должен идти символ \"[\".\n";
+                return errors;
+            }
+
+            if (tokens[temp_pos + 1].TokenValue != "[")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: После ключевого слова 'input' должен идти символ \"[\".\n";
+                return errors;
+            }
+
+            int bracketCount = 0;
+            temp_pos++;
+            while (temp_pos < tokens.Count)
+            {
+                if (tokens[temp_pos].TokenValue == "[")
+                    bracketCount++;
+                else if (tokens[temp_pos].TokenValue == "]")
+                {
+                    bracketCount--;
+                    if (bracketCount == 0)
+                        break;
+                }
+                temp_pos++;
+            }
+
+            if (temp_pos >= tokens.Count || tokens[temp_pos].TokenValue != "]")
+            {
+                errors += $"Строка {NumberStr}, Позиция {GetPositionInLine()}: Не найдена закрывающая скобка \"]\" для функции 'input'.\n";
+                return errors;
+            }
+
+            return errors;
+        }
+    }
 }

@@ -11,7 +11,7 @@ namespace Interpreter
         public static readonly HashSet<string> _keywords = new()
         {
             "if", "other", "while", "for", "func",
-            "return", "yes", "no", "null"
+            "return", "yes", "no", "null", "print", "input"
         };
 
         public static readonly HashSet<string> _border = new()
@@ -33,14 +33,12 @@ namespace Interpreter
         {
             string positionInfo = $"Строка {token.NumberStr}, Позиция {token.GetPositionInLine()}";
 
-            // Обрабатываем длинные значения
             string tokenValue = token.TokenValue;
             if (tokenValue.Length > 30)
             {
                 tokenValue = tokenValue.Substring(0, 27) + "...";
             }
 
-            // Выравниваем вывод для разных типов токенов
             string tokenType = token.TokenType;
             if (tokenType.Length > 20)
             {
@@ -50,6 +48,8 @@ namespace Interpreter
             {
                 tokenValue = tokenValue.Replace("\r", "");
             }
+
+            tokenValue = tokenValue.Replace("\n", "\\n");
 
             Console.WriteLine($"| {index,-5} | {tokenType,-20} | {positionInfo,-26} | {tokenValue,-35} |");
         }

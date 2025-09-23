@@ -48,13 +48,54 @@ namespace Interpreter
                     continue;
                 }
 
+                if (currentChar == '#' && pos + 1 < max_position && input_str[pos + 1] == '#')
+                {
+                    int start = pos;
+                    int startPosInLine = pos_in_stroke;
+                    int startStroke = stroke;
+
+                    pos += 2; 
+                    pos_in_stroke += 2;
+
+                    while (pos < max_position - 1)
+                    {
+                        if (input_str[pos] == '#' && input_str[pos + 1] == '#')
+                        {
+                            pos += 2; 
+                            pos_in_stroke += 2;
+                            break;
+                        }
+
+                        if (input_str[pos] == '\n')
+                        {
+                            stroke++;
+                            pos_in_stroke = 1;
+                        }
+                        else
+                        {
+                            pos_in_stroke++;
+                        }
+                        pos++;
+                    }
+
+                    if (pos >= max_position - 1 && !(input_str[Math.Max(0, max_position - 2)] == '#' && input_str[max_position - 1] == '#'))
+                    {
+                        Console.WriteLine("Незакрытый многострочный комментарий.");
+                    }
+
+                    string comment = input_str.Substring(start, pos - start);
+                    var commentToken = new Comment(start, comment, startStroke);
+                    commentToken.NumberPos = startPosInLine;
+                    tokens.Add(commentToken);
+                    continue;
+                }
+
                 if (currentChar == '#')
                 {
                     int start = pos;
                     int startPosInLine = pos_in_stroke;
                     int startStroke = stroke;
 
-                    // Ищем конец строки или конец файла
                     while (pos < max_position && input_str[pos] != '\n')
                     {
                         pos++;
@@ -186,6 +227,8 @@ namespace Interpreter
                             case "return": token = new Return(start, stroke); break;
                             case "yes": token = new Yes(start, stroke); break;
                             case "no": token = new No(start, stroke); break;
+                            case "input": token = new Input(start, stroke); break;
+                            case "print": token = new Print(start, stroke); break;
                             default: token = new NameVariable(start, identifier, stroke); break;
                         }
                     }
@@ -330,7 +373,7 @@ namespace Interpreter
 
             try
             {
-                string code = System.IO.File.ReadAllText(filePath, System.Text.Encoding.UTF8);
+                string code = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
                 Console.WriteLine($"\n=== АНАЛИЗ ФАЙЛА: {Path.GetFileName(filePath)} ===\n");
 
                 Parser parser = new Parser(code);
