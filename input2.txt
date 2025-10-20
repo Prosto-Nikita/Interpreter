@@ -1,19 +1,19 @@
 #Пример программы
 
-num a = 4;
-frac b
+num a, b, c
+num b
 b = input[]
-
-if[a < b](
-	while[a < 10]( 
+str s = "Слово"
+if(a < b){
+	while(a < 10){ 
 		a = a + 1
-	)
-)
-other(
-	for[num i=0; i<10; i=i+1](
+	}
+}
+other{
+	for(num i=0; i<10; i=i+1){
 		b = b + 1
-	)
-)
+	}
+}
 
 print[a, b]
 

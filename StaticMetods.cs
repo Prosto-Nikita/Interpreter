@@ -11,7 +11,7 @@ namespace Interpreter
         public static readonly HashSet<string> _keywords = new()
         {
             "if", "other", "while", "for", "func",
-            "return", "yes", "no", "null", "print", "input"
+            "return", "yes", "no", "null", "print", "input", "void"
         };
 
         public static readonly HashSet<string> _border = new()
